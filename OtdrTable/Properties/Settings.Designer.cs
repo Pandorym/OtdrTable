@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Xlsx2OtdrTable.Properties {
+namespace OtdrTable.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

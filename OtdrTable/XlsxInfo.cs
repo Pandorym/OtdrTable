@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Xlsx2OtdrTable
+namespace OtdrTable
 {
     public struct XlsxInfo
     {

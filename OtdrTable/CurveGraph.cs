@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 
-namespace Xlsx2OtdrTable
+namespace OtdrTable
 {
     static class CurveGraph
     {

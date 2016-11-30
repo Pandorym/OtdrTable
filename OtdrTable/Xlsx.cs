@@ -8,31 +8,37 @@ using System.Drawing.Imaging;
 using FlexCel.Core;
 using FlexCel.XlsAdapter;
 
-namespace Xlsx2OtdrTable
-{
-    static class Xlsx
-    {
+namespace OtdrTable {
+    static class Xlsx {
         static Random random = new Random();
         static private Double[,] coordinate;
         static private Int32 BKey;
 
-        static public void ExportingXlsx(XlsxInfo info)
-        {
-            XlsFile xls = new XlsFile(true);
-            CreateFile(xls, info);
-            xls.Save(info.xlsxName);
+        static public void ExportingXlsx(XlsxInfo info, Int32 LineNum) {
+            Console.SetCursorPosition(4, LineNum);
+            Conex.Warn("EXEC");
+            try {
+                XlsFile xls = new XlsFile(true);
+                CreateFile(xls, info, LineNum);
+                xls.Save(info.xlsxName);
+                Console.SetCursorPosition(4, LineNum);
+                Conex.Info("Done");
+            }
+            catch {
+                Console.SetCursorPosition(4, LineNum);
+                Conex.Error("Fail");
+            }
+            return;
         }
 
-        static void CreateFile(XlsFile xls,XlsxInfo info)
-        {
+        static void CreateFile(XlsFile xls, XlsxInfo info, Int32 LineNum) {
             xls.NewFile(1, TExcelFileFormat.v2016);
 
-            for (Int32 s = 0; s < Math.Max(1,(info.gyts) / 6); s++)
-            {
+            for (Int32 s = 0; s < Math.Max(1, (info.gyts) / 6); s++) {
 
                 xls.ActiveSheet = s + 1;
                 xls.SheetName = (1 + 6 * s).ToString() + "-" + (6 + s * 6).ToString();
-                if (s != (info.gyts/6) - 1)  xls.AddSheet();
+                if (s != (info.gyts / 6) - 1) xls.AddSheet();
 
                 xls.OptionsCheckCompatibility = false;
                 xls.PrintOptions = TPrintOptions.Orientation | TPrintOptions.NoPls;
@@ -56,8 +62,7 @@ namespace Xlsx2OtdrTable
                 Int32 i = 0;
 
                 Int32 gyts = (s+1) * 6 > info.gyts ? info.gyts % 6 : 6;
-                for (Int32 j = 0; j < gyts; j++, i++)
-                {
+                for (Int32 j = 0; j < gyts; j++, i++) {
 
                     Double TLR = 0.25 + Convert.ToDouble(random.Next(5, 95)) / 1000; // total loss ratio
                     makeCoordinate(info.chainLength, info.overallLength, TLR, info.By);
@@ -72,8 +77,7 @@ namespace Xlsx2OtdrTable
                     A2B = coordinate[BKey, 0] - coordinate[AKey, 0];
                     A2BTLP = (coordinate[AKey, 1] - coordinate[BKey, 1]) / A2B * 1000;
                     A2BTLP = TLR - random.Next(1, 99) / 1000.00;
-                    if (i % 2 == 0)
-                    {
+                    if (i % 2 == 0) {
                         xls.SetRowHeight(1 + OffsetX, 540);
                         xls.SetAutoRowHeight(2 + OffsetX, false);
                         xls.SetRowHeight(3 + OffsetX, 2700);
@@ -98,8 +102,7 @@ namespace Xlsx2OtdrTable
                     xls.SetCellValue(2 + OffsetX, 1 + OffsetY, info.imgName + (s * 6 + i + 1).ToString("D3"));
 
 
-                    using (MemoryStream stream = new MemoryStream())
-                    {
+                    using (MemoryStream stream = new MemoryStream()) {
                         CurveGraph.GetImg(coordinate[AKey, 0]).Save(stream, ImageFormat.Jpeg);
                         TImageProperties ImgProps = new TImageProperties();
                         ImgProps.Anchor = new TClientAnchor(TFlxAnchorType.MoveAndDontResize, 3 + OffsetX, 0, 1 + OffsetY, 0, 4 + OffsetX, 0, 5 + OffsetY, 0);
@@ -139,12 +142,15 @@ namespace Xlsx2OtdrTable
 
                     xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
 
+
+                    Console.SetCursorPosition(9, LineNum);
+                    if (i + 1 == gyts) Conex.Info("{0,3}", gyts);
+                    else Conex.Warn("{0,3}", i + 1);
                 }
             }
         }
 
-        static private void makeCoordinate(Double chainLength, Double overallLength , Double TLR ,Double By)
-        {
+        static private void makeCoordinate(Double chainLength, Double overallLength, Double TLR, Double By) {
             Int32 coordinateL = random.Next((Int32)overallLength * 2, (Int32)overallLength * 3);
             if (coordinateL > 10000) coordinateL = 10000;
             coordinate = new Double[coordinateL, 2];
@@ -154,8 +160,7 @@ namespace Xlsx2OtdrTable
             coordinate[0, 0] = chainLength; coordinate[0, 1] = By; // B
             Double x = 0, y = Ay;
             Int32 i = 2;
-            do
-            {
+            do {
                 if (i >= coordinate.GetLength(0)) i = 2;
                 Double a = ((Double)random.Next(1, 100)) / 100;
                 coordinate[i, 0] += a;
@@ -166,10 +171,8 @@ namespace Xlsx2OtdrTable
             x = 0;
             // Double keepLength = ((Double)random.Next(13, 17))/10;
             Int32 px = coordinate.Length / 10 / 60;
-            for (i = 2; i < coordinate.GetLength(0) - 1; i++)
-            {
-                if (peak && x > coordinate[0, 0])
-                {
+            for (i = 2; i < coordinate.GetLength(0) - 1; i++) {
+                if (peak && x > coordinate[0, 0]) {
                     Double N = coordinate[0, 1] * random.Next(1400, 1600) / 1000.00, //波峰高度
                            M = N - (coordinate[0, 1] / 5),
                            O1 = random.Next(10, 30) / 10,
@@ -192,11 +195,11 @@ namespace Xlsx2OtdrTable
                         else if (j < px * 14) coordinate[i, 1] = coordinate[0, 1] / random.Next(1500, 2000) * 1000;
                         else coordinate[i, 1] = coordinate[0, 1] / random.Next(1500, 4000) * 1000;
                     }
-                        peak = false;
+                    peak = false;
                 }
                 coordinate[i, 0] += x;
                 x = coordinate[i, 0];
-                if (x < coordinate[0, 0] + px * 2 )//* keepLength)
+                if (x < coordinate[0, 0] + px * 2)//* keepLength)
                 {
                     // if (random.Next(1,3) == 1) TLR -= Convert.ToDouble(random.Next(4, 10)) / 1000;
                     // else TLR += Convert.ToDouble(random.Next(4, 10)) / 1000;
@@ -205,38 +208,50 @@ namespace Xlsx2OtdrTable
                 }
                 else coordinate[i, 1] = coordinate[0, 1] / random.Next(1500, 7000) * 1000;
                 if (x < coordinate[0, 0]) BKey = i;
-                coordinate[i, 1] = coordinate[i, 1] < 0 ? 0: coordinate[i, 1]; 
+                coordinate[i, 1] = coordinate[i, 1] < 0 ? 0 : coordinate[i, 1];
             }
         }
-            
 
-        static public String[,] ReadXlsx(String filePath)
-        {
-                XlsFile xls = new XlsFile(filePath);
-                xls.ActiveSheetByName = "工程量明细表";
-                Int32 XF = -1, rowCount = 0; ;
-                Int32 c = 0;
-                for (Int32 row = 1; row < xls.RowCount; row++)
-                {
-                    if (xls.GetCellValueIndexed(row, 1, ref XF) == null) c++;
-                    else c = 0; 
-                    if ( c.Equals(10))
-                    {
-                        rowCount = row - 10;
-                        break;
-                    }
+        static public String[,] ReadXlsx(String filePath) {
+            XlsFile xls = new XlsFile(filePath);
+            xls.ActiveSheetByName = "工程量明细表";
+            Int32 XF = -1, rowCount = 0; ;
+            Int32 c = 0;
+
+            // 獲得項目數，即有效行數
+            for (Int32 row = 1; row < xls.RowCount; row++) {
+                if (xls.GetCellValueIndexed(row, 1, ref XF) == null) c++;
+                else c = 0;
+                // 往下十行為空 視為文件結束
+                if (c.Equals(10)) {
+                    rowCount = row - 10;
+                    break;
                 }
-                rowCount = rowCount == 0 ? xls.RowCount - 5 : rowCount - 5;
-                String[,] str = new String[rowCount, 3]; 
-                String notEmpty = String.Empty;
-                for (Int32 row = 4; row < rowCount + 4; row++)
-                {
-                    str[row - 4, 0] = xls.GetCellValueIndexed(row, 3, ref XF) != null ?
-                        xls.GetCellValueIndexed(row, 3, ref XF).ToString() : notEmpty;
-                    str[row - 4, 1] = xls.GetCellValueIndexed(row, 5, ref XF).ToString();
+            }
+            rowCount = rowCount == 0 ? xls.RowCount - 5 : rowCount - 5; // 有效行數 = 總行數 - 頭三行 - 尾二行
+
+            String[,] str = new String[rowCount, 3];
+            String notEmpty = String.Empty;
+            for (Int32 row = 4; row < rowCount + 4; row++) {
+                str[row - 4, 0] = xls.GetCellValueIndexed(row, 3, ref XF) != null ?
+                    xls.GetCellValueIndexed(row, 3, ref XF).ToString() : notEmpty;
+                str[row - 4, 1] = xls.GetCellValueIndexed(row, 5, ref XF).ToString();
                 str[row - 4, 2] = xls.GetCellValueIndexed(row, 4, ref XF).ToString();
-                    notEmpty = str[row - 4, 0];
-                }
+                notEmpty = str[row - 4, 0];
+            }
+            return str;
+        }
+
+        static public String[,] ReadTxt(String filePath) {
+            StreamReader sr = new StreamReader(filePath, Encoding.UTF8);
+            String[] Line = sr.ReadToEnd().Split('\n');
+            String[,] str = new String[Line.Length,3];
+            for (Int32 i = 0; i < Line.Length; i++) {
+                if (Line[i][Line[i].Length - 1] == '\r') Line[i] = Line[i].Substring(0, Line[i].Length - 1);
+                str[i, 0] = Line[i].Split(' ')[0];
+                str[i, 2] = Line[i].Split(' ')[1];
+                str[i, 1] = Line[i].Split(' ')[2];
+            }
             return str;
         }
     }
