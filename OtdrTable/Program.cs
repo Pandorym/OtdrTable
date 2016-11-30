@@ -48,13 +48,14 @@ namespace OtdrTable
         }
         
         static private void Mark() {
+            Console.CursorVisible = false;
             Int32 CursorTop = Console.CursorTop + 1;
             ShowInfo();
             Int32 ContextCursorTop = Console.CursorTop;
-            for (Int32 i = 0; i < xlsxInfo.Length; i++)
-                Xlsx.ExportingXlsx(xlsxInfo[i], CursorTop + i);
+            Parallel.For(0,xlsxInfo.Length,i => new Xlsx().ExportingXlsx(xlsxInfo[i], CursorTop + i));
             Console.SetCursorPosition(0, ContextCursorTop);
             Conex.InfoLine("    All done.\n");
+            Console.CursorVisible = true;
         }
 
 
@@ -64,6 +65,7 @@ namespace OtdrTable
                     case "TXT":
                         inputInfo = Xlsx.ReadTxt(filepath);
                         break;
+                    case "XLS":
                     case "XLSX":
                         inputInfo = Xlsx.ReadXlsx(filepath);
                         break;

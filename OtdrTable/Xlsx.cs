@@ -9,29 +9,36 @@ using FlexCel.Core;
 using FlexCel.XlsAdapter;
 
 namespace OtdrTable {
-    static class Xlsx {
-        static Random random = new Random();
-        static private Double[,] coordinate;
-        static private Int32 BKey;
+     class Xlsx {
+        Random random = new Random();
+        private Double[,] coordinate;
+        private Int32 BKey;
+        static private Object ConsoleLock = new Object();
 
-        static public void ExportingXlsx(XlsxInfo info, Int32 LineNum) {
-            Console.SetCursorPosition(4, LineNum);
-            Conex.Warn("EXEC");
+        public void ExportingXlsx(XlsxInfo info, Int32 LineNum) {
+            lock (ConsoleLock) {
+                Console.SetCursorPosition(4, LineNum);
+                Conex.Warn("EXEC");
+            }
             try {
                 XlsFile xls = new XlsFile(true);
                 CreateFile(xls, info, LineNum);
                 xls.Save(info.xlsxName);
-                Console.SetCursorPosition(4, LineNum);
-                Conex.Info("Done");
+                lock (ConsoleLock) {
+                    Console.SetCursorPosition(4, LineNum);
+                    Conex.Info("Done");
+                }
             }
             catch {
-                Console.SetCursorPosition(4, LineNum);
-                Conex.Error("Fail");
+                lock (ConsoleLock) {
+                    Console.SetCursorPosition(4, LineNum);
+                    Conex.Error("Fail");
+                }
             }
             return;
         }
 
-        static void CreateFile(XlsFile xls, XlsxInfo info, Int32 LineNum) {
+        public void CreateFile(XlsFile xls, XlsxInfo info, Int32 LineNum) {
             xls.NewFile(1, TExcelFileFormat.v2016);
 
             for (Int32 s = 0; s < Math.Max(1, (info.gyts) / 6); s++) {
@@ -61,12 +68,13 @@ namespace OtdrTable {
 
                 Int32 i = 0;
 
+                CurveGraph CG = new CurveGraph();
                 Int32 gyts = (s+1) * 6 > info.gyts ? info.gyts % 6 : 6;
                 for (Int32 j = 0; j < gyts; j++, i++) {
 
                     Double TLR = 0.25 + Convert.ToDouble(random.Next(5, 95)) / 1000; // total loss ratio
                     makeCoordinate(info.chainLength, info.overallLength, TLR, info.By);
-                    CurveGraph.InitImg(info.chainLength, info.overallLength, coordinate);
+                    CG.InitImg(info.chainLength, info.overallLength, coordinate);
                     Int32 AKey;
                     Double A2B, A2BTLP;
 
@@ -103,7 +111,7 @@ namespace OtdrTable {
 
 
                     using (MemoryStream stream = new MemoryStream()) {
-                        CurveGraph.GetImg(coordinate[AKey, 0]).Save(stream, ImageFormat.Jpeg);
+                        CG.GetImg(coordinate[AKey, 0]).Save(stream, ImageFormat.Jpeg);
                         TImageProperties ImgProps = new TImageProperties();
                         ImgProps.Anchor = new TClientAnchor(TFlxAnchorType.MoveAndDontResize, 3 + OffsetX, 0, 1 + OffsetY, 0, 4 + OffsetX, 0, 5 + OffsetY, 0);
                         ImgProps.ShapeName = "Img" + i.ToString("D3");
@@ -142,15 +150,16 @@ namespace OtdrTable {
 
                     xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
 
-
-                    Console.SetCursorPosition(9, LineNum);
-                    if (i + 1 == gyts) Conex.Info("{0,3}", gyts);
-                    else Conex.Warn("{0,3}", i + 1);
+                    lock (ConsoleLock) {
+                        Console.SetCursorPosition(9, LineNum);
+                        if (s * 6 + i + 1 == info.gyts) Conex.Info("{0,3}", (s * 6 + i + 1).ToString());
+                        else Conex.Warn("{0,3}", (s * 6 + i + 1).ToString());
+                    }
                 }
             }
         }
 
-        static private void makeCoordinate(Double chainLength, Double overallLength, Double TLR, Double By) {
+         private void makeCoordinate(Double chainLength, Double overallLength, Double TLR, Double By) {
             Int32 coordinateL = random.Next((Int32)overallLength * 2, (Int32)overallLength * 3);
             if (coordinateL > 10000) coordinateL = 10000;
             coordinate = new Double[coordinateL, 2];

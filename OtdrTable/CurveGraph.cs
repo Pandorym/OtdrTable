@@ -9,14 +9,14 @@ using System.IO;
 
 namespace OtdrTable
 {
-    static class CurveGraph
+    class CurveGraph
     {
-        static private Int32[,] dot;
-        static private Double yDiv;
-        static private Graphics g;
-        static private Bitmap Img;
+        private Int32[,] dot;
+        private Double yDiv;
+        private Graphics g;
+        private Bitmap Img;
 
-        static public Bitmap InitImg(Double chainLength, Double overallLength, Double[,] coordinate)
+        public Bitmap InitImg(Double chainLength, Double overallLength, Double[,] coordinate)
         {
             Img = new Bitmap(601, 276);
             g = Graphics.FromImage(Img);
@@ -30,7 +30,7 @@ namespace OtdrTable
             return Img;
         }
 
-        static public Bitmap GetImg(Double Ax)
+        public Bitmap GetImg(Double Ax)
         {
             Bitmap ImgI = (Bitmap)Img.Clone(),
                 ImgRet;
@@ -41,7 +41,7 @@ namespace OtdrTable
             return ImgRet;
         }
 
-        static private void addBFromBx(Double Bx)
+        private void addBFromBx(Double Bx)
         {
             Int32 BxPiexl = (Int32)Math.Floor(Bx / (yDiv / 60.00));
             Int32 BoxX = BxPiexl - (32 + ((Int32)Bx).ToString().Length * 6) - 2;
@@ -59,7 +59,7 @@ namespace OtdrTable
 
         }
 
-        static private void addAFromAx(Double Ax)
+        private void addAFromAx(Double Ax)
         {
             Int32 AxPiexl = (Int32)Math.Floor(Ax / (yDiv / 60.00));
 
@@ -74,7 +74,7 @@ namespace OtdrTable
             g.DrawString("A" + Ax.ToString("0.00"), font, fontB, new Point(AxPiexl, 25 + 2));
         }
 
-        static public void addFont()
+        public void addFont()
         {
             Font font = new Font("宋体", 12, FontStyle.Bold);
             SolidBrush sbrush = new SolidBrush(Color.Black);
@@ -83,7 +83,7 @@ namespace OtdrTable
             g.DrawString(yDiv + " m/Div 4.000dB/Div", font, sbrush, new PointF(62, 6));
         }
 
-        static public void addLimit(Int32 chainLength)
+        public void addLimit(Int32 chainLength)
         {
             Pen p = new Pen(Color.Black, 1);
             g.DrawLine(p, 0, 264, 0, 274);
@@ -98,7 +98,7 @@ namespace OtdrTable
             g.DrawLine(p, Bx - 2, 269, Bx - 7, 269);
         }
 
-        static public void linkCoordinate(Double[,] coordinate)
+        public void linkCoordinate(Double[,] coordinate)
         {
             Pen p = new Pen(Color.Black,1);
             dot = new Int32[coordinate.GetLength(0), coordinate.GetLength(1)];
@@ -123,14 +123,14 @@ namespace OtdrTable
             }
         }
 
-        static public void allWhite()
+        public void allWhite()
         {
             for (Int16 x = 0; x < 601; x++)
                 for (Int16 y = 0; y < 276; y++)
                     Img.SetPixel(x, y, Color.White);
         }
 
-        static public void addDottedline()
+        public void addDottedline()
         {
             for (Int16 i = 0; i < 11; i++)
                 dottedLine(i * 60, 25, 0, 276, Img);
@@ -138,7 +138,7 @@ namespace OtdrTable
                 dottedLine(0, i * 25 + 25, 601, i * 25 + 25, Img);
         }
 
-        static public void dottedLine(Int32 Ax, Int32 Ay, Int32 Bx, Int32 By, Bitmap Img)
+        public void dottedLine(Int32 Ax, Int32 Ay, Int32 Bx, Int32 By, Bitmap Img)
         {
             Int16 d = 0;  // 0 = Up | 1 = down | 2 = left | 3 = right
             Int32 Length = 1;
