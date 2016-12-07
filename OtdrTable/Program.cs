@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace OtdrTable
 {
@@ -16,6 +15,7 @@ namespace OtdrTable
         static void Main(string[] args)
         {
             Conex.InitConsole();
+            CloseDisposal.BindingHandler();
             try {
                 // 指令后帶文件名 只執行一次
                 Once = args.Length != 0;
@@ -42,20 +42,22 @@ namespace OtdrTable
                 Conex.ErrorLine("Unknown error.");
             }
             finally {
-                Conex.SaveLog();
+                CloseDisposal.Execute();
             }
             return;
         }
         
         static private void Mark() {
-            Console.CursorVisible = false;
+            Conex.CursorVisible = false;
             Int32 CursorTop = Console.CursorTop + 1;
             ShowInfo();
-            Int32 ContextCursorTop = Console.CursorTop;
+            Conex.SaveCursorPosition();
+            Int32 TC = Environment.TickCount;
             Parallel.For(0,xlsxInfo.Length,i => new Xlsx().ExportingXlsx(xlsxInfo[i], CursorTop + i));
-            Console.SetCursorPosition(0, ContextCursorTop);
-            Conex.InfoLine("    All done.\n");
-            Console.CursorVisible = true;
+            Conex.RevertCurserPosition();
+            Conex.Info("    All done.");
+            Conex.DebugLine(" Time consuming: {0} ms\n", Environment.TickCount - TC);
+            Conex.CursorVisible = true;
         }
 
 
@@ -70,7 +72,7 @@ namespace OtdrTable
                         inputInfo = Xlsx.ReadXlsx(filepath);
                         break;
                     default:
-                        Conex.WarnLine("    Unknown file format, try as 'txt'.");
+                        Conex.WarnLine("    Unknown file format, try as 'TXT'.");
                         inputInfo = Xlsx.ReadTxt(filepath);
                         break;
                 }
@@ -125,7 +127,7 @@ namespace OtdrTable
             Int32 gytsSum = 0;
             for (Int32 i = 0; i < xlsxInfo.Length; i++)
                 gytsSum += xlsxInfo[i].gyts;
-            Conex.DebugLine("Project sum: {0}; Gyts Sum: {1}.", xlsxInfo.Length, gytsSum);
+            Conex.DebugLine("Project sum: {0}; Gyts sum: {1}.", xlsxInfo.Length, gytsSum);
             for (Int32 i = 0; i < xlsxInfo.Length; i++)
                 Conex.WriteLine("{0,2}. Wait   0/{1,-3} {2,10:F2} {3,10:F2} {4,6:F3} {5}",
                     (i + 1).ToString(),

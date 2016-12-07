@@ -10,14 +10,16 @@ using FlexCel.XlsAdapter;
 
 namespace OtdrTable {
      class Xlsx {
-        Random random = new Random();
+
         private Double[,] coordinate;
         private Int32 BKey;
+
+        private Random random = new Random();
         static private Object ConsoleLock = new Object();
 
         public void ExportingXlsx(XlsxInfo info, Int32 LineNum) {
             lock (ConsoleLock) {
-                Console.SetCursorPosition(4, LineNum);
+                Conex.SetCursorPosition(4, LineNum);
                 Conex.Warn("EXEC");
             }
             try {
@@ -25,13 +27,13 @@ namespace OtdrTable {
                 CreateFile(xls, info, LineNum);
                 xls.Save(info.xlsxName);
                 lock (ConsoleLock) {
-                    Console.SetCursorPosition(4, LineNum);
+                    Conex.SetCursorPosition(4, LineNum);
                     Conex.Info("Done");
                 }
             }
             catch {
                 lock (ConsoleLock) {
-                    Console.SetCursorPosition(4, LineNum);
+                    Conex.SetCursorPosition(4, LineNum);
                     Conex.Error("Fail");
                 }
             }
@@ -41,6 +43,7 @@ namespace OtdrTable {
         public void CreateFile(XlsFile xls, XlsxInfo info, Int32 LineNum) {
             xls.NewFile(1, TExcelFileFormat.v2016);
 
+            Int32 i = 1;
             for (Int32 s = 0; s < Math.Max(1, (info.gyts) / 6); s++) {
 
                 xls.ActiveSheet = s + 1;
@@ -66,7 +69,6 @@ namespace OtdrTable {
 
                 xls.SetColWidth(5, 672);
 
-                Int32 i = 0;
 
                 CurveGraph CG = new CurveGraph();
                 Int32 gyts = (s+1) * 6 > info.gyts ? info.gyts % 6 : 6;
@@ -79,13 +81,13 @@ namespace OtdrTable {
                     Double A2B, A2BTLP;
 
 
-                    Int32 OffsetX = i / 2 * 8,
-                          OffsetY = i % 2 * 5;
+                    Int32 OffsetX = j / 2 * 8,
+                          OffsetY = j % 2 * 5;
                     AKey = (Int32)(BKey / Convert.ToDouble(random.Next(250, 400) / 100.00));
                     A2B = coordinate[BKey, 0] - coordinate[AKey, 0];
                     A2BTLP = (coordinate[AKey, 1] - coordinate[BKey, 1]) / A2B * 1000;
                     A2BTLP = TLR - random.Next(1, 99) / 1000.00;
-                    if (i % 2 == 0) {
+                    if (j % 2 == 0) {
                         xls.SetRowHeight(1 + OffsetX, 540);
                         xls.SetAutoRowHeight(2 + OffsetX, false);
                         xls.SetRowHeight(3 + OffsetX, 2700);
@@ -107,7 +109,7 @@ namespace OtdrTable {
                     fmt.HAlignment = THFlxAlignment.center;
                     fmt.Font.Size20 = 200;
                     xls.SetCellFormat(2 + OffsetX, 1 + OffsetY, xls.AddFormat(fmt));
-                    xls.SetCellValue(2 + OffsetX, 1 + OffsetY, info.imgName + (s * 6 + i + 1).ToString("D3"));
+                    xls.SetCellValue(2 + OffsetX, 1 + OffsetY, info.imgName + i.ToString("D3"));
 
 
                     using (MemoryStream stream = new MemoryStream()) {
@@ -151,9 +153,9 @@ namespace OtdrTable {
                     xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
 
                     lock (ConsoleLock) {
-                        Console.SetCursorPosition(9, LineNum);
-                        if (s * 6 + i + 1 == info.gyts) Conex.Info("{0,3}", (s * 6 + i + 1).ToString());
-                        else Conex.Warn("{0,3}", (s * 6 + i + 1).ToString());
+                        Conex.SetCursorPosition(9, LineNum);
+                        if (i == info.gyts) Conex.Info("{0,3}", i.ToString());
+                        else Conex.Warn("{0,3}", i.ToString());
                     }
                 }
             }

@@ -9,18 +9,23 @@ namespace OtdrTable {
     static class Conex {
         const String LogPath = @"C:\Log\OtdrTeble\";
 
-        static StreamWriter Log;
+        static ConexStream Log;
 
         static Boolean Record = true;
 
-        static ConsoleColor ForegroundColor = Console.ForegroundColor;
-        static ConsoleColor BackgroundColor = Console.BackgroundColor;
+        static public Int32 OriginLeft, OriginTop,CacheLeft,CacheTop;
+        static public Int64 OriginPosition;
+        static public ConsoleColor ForegroundColor = Console.ForegroundColor;
+        static public ConsoleColor BackgroundColor = Console.BackgroundColor;
         
         static public void InitConsole() {
             Console.Title = "Otdr Table";
-            Console.WindowWidth = 120;
+            Console.OutputEncoding = Encoding.Unicode;
             new DirectoryInfo(LogPath).Create();
-            Log = new StreamWriter(LogPath + "log_" + (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000000);
+            Log = new ConexStream(LogPath + "log_" + (DateTime.Now.ToUniversalTime().Ticks - 621355968000000000) / 10000000, FileMode.CreateNew);
+            OriginLeft = Console.CursorLeft;
+            OriginTop = Console.CursorTop;
+            OriginPosition = Log.Position;
         }
 
         static public void SaveLog() {
@@ -107,6 +112,29 @@ namespace OtdrTable {
             Console.WriteLine(ourput);
             Console.ForegroundColor = ForegroundColor;
             if (Record) Log.WriteLine(ourput);
+        }
+
+        static public void SaveCursorPosition() {
+            CacheLeft = Console.CursorLeft;
+            CacheTop = Console.CursorTop;
+        }
+
+        static public void RevertCurserPosition() {
+            SetCursorPosition(CacheLeft, CacheTop);
+        }
+
+        static public void SetCursorPosition(Int32 left, Int32 top) {
+            Console.SetCursorPosition(left, top);
+            Log.SetCursorPosition(left - OriginLeft, top - OriginTop);
+        }
+
+        static public Boolean CursorVisible {
+            get {
+                return Console.CursorVisible;
+            }
+            set {
+                Console.CursorVisible = value;
+            }
         }
     }
 }
