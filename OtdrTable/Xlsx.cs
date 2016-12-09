@@ -5,14 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Drawing.Imaging;
-using FlexCel.Core;
-using FlexCel.XlsAdapter;
+
+using NPOI.SS.UserModel;
+using NPOI.HSSF.UserModel;
+using NPOI.XSSF.UserModel;
+using OtdrTable.NPOI_Ex;
+using System.Drawing;
 
 namespace OtdrTable {
-     class Xlsx {
+    class Xlsx {
+        private IWorkbook Workbook;
+        private ISheet ActiveSheet;
+        ICellStyle DefaultStyle;
+        private XlsxInfo Info;
 
+        //-點信息[x,y]
+        // coordinate {
+        //   x : 點序號 {
+        //     0 : 該點對應的縱坐標/dB,
+        //     1 : 該點對應的實際行坐標/m
+        //-}
         private Double[,] coordinate;
-        private Int32 BKey;
+        private Int32 BKey; // B點在coordinate中的索引
+        private Double TLR; // 鏈衰減係數
 
         private Random random = new Random();
         static private Object ConsoleLock = new Object();
@@ -23,9 +38,10 @@ namespace OtdrTable {
                 Conex.Warn("EXEC");
             }
             try {
-                XlsFile xls = new XlsFile(true);
-                CreateFile(xls, info, LineNum);
-                xls.Save(info.xlsxName);
+                this.Workbook = new XSSFWorkbook();
+                this.Info = info;
+                CreateFile(LineNum);
+                Workbook.Save(info.xlsxName);
                 lock (ConsoleLock) {
                     Conex.SetCursorPosition(4, LineNum);
                     Conex.Info("Done");
@@ -40,43 +56,56 @@ namespace OtdrTable {
             return;
         }
 
-        public void CreateFile(XlsFile xls, XlsxInfo info, Int32 LineNum) {
-            xls.NewFile(1, TExcelFileFormat.v2016);
+        public void CreateFile(Int32 LineNum) {
+
+            TLR = 0.25 + Convert.ToDouble(random.Next(5, 95)) / 1000; // total loss ratio of overal
+
+            CurveGraph CG = this.markGraphBase();
+
+            // GOTO: ColFmt.Font.Family = 3;
+            // GOTO: ColFmt.Font.Scheme = TFontScheme.None;
+
+            IFont font_8 = Workbook.CreateFont();
+            font_8.FontName = "宋体";
+            font_8.FontHeight = 8;
+
+            IFont font_10 = Workbook.CreateFont();
+            font_10.FontName = "宋体";
+            font_10.FontHeight = 10;
+
+            ICellStyle DefaultStyle = Workbook.CreateCellStyle();
+            DefaultStyle.Alignment = HorizontalAlignment.Left;
+            DefaultStyle.SetFont(font_8);
+
+            ICellStyle style_centen_8 = Workbook.CreateCellStyle();
+            style_centen_8.Alignment = HorizontalAlignment.Center;
+            style_centen_8.SetFont(font_8);
+
+            ICellStyle style_centen_10 = Workbook.CreateCellStyle();
+            style_centen_10.Alignment = HorizontalAlignment.Center;
+            style_centen_10.ShrinkToFit = false;
+            style_centen_10.SetFont(font_10);
+
+            this.DefaultStyle = DefaultStyle;
 
             Int32 i = 1;
-            for (Int32 s = 0; s < Math.Max(1, (info.gyts) / 6); s++) {
+            for (Int32 s = 0; s < Math.Max(1, (Info.gyts) / 6); s++) {
 
-                xls.ActiveSheet = s + 1;
-                xls.SheetName = (1 + 6 * s).ToString() + "-" + (6 + s * 6).ToString();
-                if (s != (info.gyts / 6) - 1) xls.AddSheet();
+                ActiveSheet = Workbook.CreateSheet((1 + 6 * s).ToString() + "-" + (6 + s * 6).ToString());
 
-                xls.OptionsCheckCompatibility = false;
-                xls.PrintOptions = TPrintOptions.Orientation | TPrintOptions.NoPls;
+                // GOTO: xls.OptionsCheckCompatibility = false;
+                // GOTO: xls.PrintOptions = TPrintOptions.Orientation | TPrintOptions.NoPls;
 
-                xls.DefaultColWidth = 2720;
-                xls.DefaultRowHeight = 270;
-                xls.DefaultRowHeightAutomatic = false;
+                // Fix P#0; Sheet.DefaultColumnWidth = 2720;
+                ActiveSheet.DefaultRowHeight = 270;
 
-                TFlxFormat ColFmt;
-                ColFmt = xls.GetFormat(xls.GetColFormat(1));
-                ColFmt.Font.Name = "宋体";
-                ColFmt.Font.Family = 3;
-                ColFmt.Font.Size20 = 160;
-                ColFmt.Font.Scheme = TFontScheme.None;
-                ColFmt.HAlignment = THFlxAlignment.left;
-                xls.SetFormat(0, ColFmt);
+                for (Int32 colnum = 0; colnum < 9; colnum++)
+                    ActiveSheet.SetColumnWidth(colnum, 2720);
+                ActiveSheet.SetColumnWidth(4, 672);
 
-
-                xls.SetColWidth(5, 672);
-
-
-                CurveGraph CG = new CurveGraph();
-                Int32 gyts = (s+1) * 6 > info.gyts ? info.gyts % 6 : 6;
+                Int32 gyts = (s+1) * 6 > Info.gyts ? Info.gyts % 6 : 6;
                 for (Int32 j = 0; j < gyts; j++, i++) {
 
-                    Double TLR = 0.25 + Convert.ToDouble(random.Next(5, 95)) / 1000; // total loss ratio
-                    makeCoordinate(info.chainLength, info.overallLength, TLR, info.By);
-                    CG.InitImg(info.chainLength, info.overallLength, coordinate);
                     Int32 AKey;
                     Double A2B, A2BTLP;
 
@@ -88,80 +117,92 @@ namespace OtdrTable {
                     A2BTLP = (coordinate[AKey, 1] - coordinate[BKey, 1]) / A2B * 1000;
                     A2BTLP = TLR - random.Next(1, 99) / 1000.00;
                     if (j % 2 == 0) {
-                        xls.SetRowHeight(1 + OffsetX, 540);
-                        xls.SetAutoRowHeight(2 + OffsetX, false);
-                        xls.SetRowHeight(3 + OffsetX, 2700);
-                        xls.SetAutoRowHeight(4 + OffsetX, false);
-                        xls.SetAutoRowHeight(5 + OffsetX, false);
-                        xls.SetAutoRowHeight(6 + OffsetX, false);
-                        xls.SetAutoRowHeight(7 + OffsetX, false);
-                        xls.SetAutoRowHeight(8 + OffsetX, false);
+                        SetRowHeight(0 + OffsetX, 540);
+                        SetRowHeight(2 + OffsetX, 2700);
                     }
-
-                    xls.MergeCells(1 + OffsetX, 1 + OffsetY, 1 + OffsetX, 4 + OffsetY);
-                    xls.MergeCells(2 + OffsetX, 1 + OffsetY, 2 + OffsetX, 4 + OffsetY);
-                    xls.MergeCells(3 + OffsetX, 1 + OffsetY, 3 + OffsetX, 4 + OffsetY);
-                    xls.MergeCells(4 + OffsetX, 1 + OffsetY, 4 + OffsetX, 4 + OffsetY);
-
-                    TFlxFormat fmt;
-
-                    fmt = xls.GetCellVisibleFormatDef(2 + OffsetX, 1 + OffsetY);
-                    fmt.HAlignment = THFlxAlignment.center;
-                    fmt.Font.Size20 = 200;
-                    xls.SetCellFormat(2 + OffsetX, 1 + OffsetY, xls.AddFormat(fmt));
-                    xls.SetCellValue(2 + OffsetX, 1 + OffsetY, info.imgName + i.ToString("D3"));
+                    
+                    MergeCells(0 + OffsetX, 0 + OffsetX, 0 + OffsetY, 3 + OffsetY);
+                    MergeCells(1 + OffsetX, 1 + OffsetX, 0 + OffsetY, 3 + OffsetY);
+                    MergeCells(2 + OffsetX, 2 + OffsetX, 0 + OffsetY, 3 + OffsetY);
+                    MergeCells(3 + OffsetX, 3 + OffsetX, 0 + OffsetY, 3 + OffsetY);
 
 
-                    using (MemoryStream stream = new MemoryStream()) {
-                        CG.GetImg(coordinate[AKey, 0]).Save(stream, ImageFormat.Jpeg);
-                        TImageProperties ImgProps = new TImageProperties();
-                        ImgProps.Anchor = new TClientAnchor(TFlxAnchorType.MoveAndDontResize, 3 + OffsetX, 0, 1 + OffsetY, 0, 4 + OffsetX, 0, 5 + OffsetY, 0);
-                        ImgProps.ShapeName = "Img" + i.ToString("D3");
-                        xls.AddImage(stream, ImgProps);
-                    }
+                    SetCellStyle(1 + OffsetX, 0 + OffsetY, style_centen_10);
+                    SetCellValue(1 + OffsetX, 0 + OffsetY, Info.imgName + i.ToString("D3"));
+                    
+                    AddPicture(CG.GetImg(coordinate[AKey, 0]), 0, 0, -10000, 0, 0 + OffsetY, 2 + OffsetX, 4 + OffsetY, 3 + OffsetX);                    
 
+                    SetCellStyle(3 + OffsetX, 0 + OffsetY, style_centen_8);
+                    SetCellValue(3 + OffsetX, 0 + OffsetY, "曲线信息");
 
-                    fmt = xls.GetCellVisibleFormatDef(4 + OffsetX, 1 + OffsetY);
-                    fmt.HAlignment = THFlxAlignment.center;
-                    xls.SetCellFormat(4 + OffsetX, 1 + OffsetY, xls.AddFormat(fmt));
-                    xls.SetCellValue(4 + OffsetX, 1 + OffsetY, "曲线信息");
+                    SetCellValue(4 + OffsetX, 0 + OffsetY, "A-B 距离:");
+                    SetCellValue(4 + OffsetX, 1 + OffsetY, ((Int32)A2B).ToString() + " m");
 
-                    xls.SetCellValue(5 + OffsetX, 1 + OffsetY, "A-B 距离:");
-                    xls.SetCellValue(5 + OffsetX, 2 + OffsetY, ((Int32)A2B).ToString() + " m");
+                    SetCellValue(4 + OffsetX, 2 + OffsetY, "A-B 衰减;");
+                    SetCellValue(4 + OffsetX, 3 + OffsetY, (A2BTLP * A2B / 1000).ToString("0.000") + " dB");
 
-                    xls.SetCellValue(5 + OffsetX, 3 + OffsetY, "A-B 衰减;");
-                    xls.SetCellValue(5 + OffsetX, 4 + OffsetY, (A2BTLP * A2B / 1000).ToString("0.000") + " dB");
+                    SetCellValue(5 + OffsetX, 0 + OffsetY, "A-B 衰减系数;");
+                    SetCellValue(5 + OffsetX, 1 + OffsetY, A2BTLP.ToString("0.000") + " dB/km");
 
-                    xls.SetCellValue(6 + OffsetX, 1 + OffsetY, "A-B 衰减系数;");
-                    xls.SetCellValue(6 + OffsetX, 2 + OffsetY, A2BTLP.ToString("0.000") + " dB/km");
+                    SetCellValue(5 + OffsetX, 2 + OffsetY, "A 纵坐标;");
+                    SetCellValue(5 + OffsetX, 3 + OffsetY, coordinate[AKey, 1].ToString("0.000") + " dB");
 
-                    xls.SetCellValue(6 + OffsetX, 3 + OffsetY, "A 纵坐标;");
-                    xls.SetCellValue(6 + OffsetX, 4 + OffsetY, coordinate[AKey, 1].ToString("0.000") + " dB");
+                    SetCellValue(6 + OffsetX, 0 + OffsetY, "链长;");
+                    SetCellValue(6 + OffsetX, 1 + OffsetY, Info.chainLength.ToString() + " m");
 
-                    xls.SetCellValue(7 + OffsetX, 1 + OffsetY, "链长;");
-                    xls.SetCellValue(7 + OffsetX, 2 + OffsetY, info.chainLength.ToString() + " m");
+                    SetCellValue(6 + OffsetX, 2 + OffsetY, "链衰减;");
+                    SetCellValue(6 + OffsetX, 3 + OffsetY, (TLR * Info.chainLength / 1000).ToString("0.000") + " dB");
 
-                    xls.SetCellValue(7 + OffsetX, 3 + OffsetY, "链衰减;");
-                    xls.SetCellValue(7 + OffsetX, 4 + OffsetY, (TLR * info.chainLength / 1000).ToString("0.000") + " dB");
+                    SetCellValue(7 + OffsetX, 0 + OffsetY, "链衰减系数;");
+                    SetCellValue(7 + OffsetX, 1 + OffsetY, TLR.ToString("0.000") + " dB/km");
 
-                    xls.SetCellValue(8 + OffsetX, 1 + OffsetY, "链衰减系数;");
-                    xls.SetCellValue(8 + OffsetX, 2 + OffsetY, TLR.ToString("0.000") + " dB/km");
+                    SetCellValue(7 + OffsetX, 2 + OffsetY, "事件数量;");
+                    SetCellValue(7 + OffsetX, 3 + OffsetY, 2);
 
-                    xls.SetCellValue(8 + OffsetX, 3 + OffsetY, "事件数量;");
-                    xls.SetCellValue(8 + OffsetX, 4 + OffsetY, 2);
-
-                    xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
-
+                    // GOTO: xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
                     lock (ConsoleLock) {
                         Conex.SetCursorPosition(9, LineNum);
-                        if (i == info.gyts) Conex.Info("{0,3}", i.ToString());
+                        if (i == Info.gyts) Conex.Info("{0,3}", i.ToString());
                         else Conex.Warn("{0,3}", i.ToString());
                     }
                 }
             }
         }
 
-         private void makeCoordinate(Double chainLength, Double overallLength, Double TLR, Double By) {
+        private IPicture AddPicture(Bitmap pic, Int32 dx1, Int32 dy1, Int32 dx2, Int32 dy2, Int32 col1, Int32 row1, Int32 col2, Int32 row2) {
+            return ActiveSheet.AddPicture(pic, dx1, dy1, dx2, dy2, col1, row1, col2, row2);
+        }
+
+        private void SetRowHeight(Int32 row, Int16 height) {
+            ActiveSheet.SetRowHeight(row, height);
+        }
+
+        private void SetCellStyle(Int32 row, Int32 col, ICellStyle style) {
+            ActiveSheet.SetCellStyle(row, col, style);
+        }
+
+        private ICell SetCellValue(Int32 row, Int32 col, String value) {
+            return ActiveSheet.SetCellValue(row, col, value, DefaultStyle);
+        }
+
+        private ICell SetCellValue(Int32 row, Int32 col, Int32 value) {
+            return ActiveSheet.SetCellValue(row, col, value, DefaultStyle);
+        }
+
+        private Int32 MergeCells(Int32 firstRow, Int32 lastRow, Int32 firstCol, Int32 lastCol) {
+            return ActiveSheet.MergeCells(firstRow, lastRow, firstCol, lastCol);
+        }
+
+        // 生成底圖。
+        // De: 即對初始化CurveGraph。獲得比成圖缺少A點標記的對象。
+        private CurveGraph markGraphBase() {
+            CurveGraph CG = new CurveGraph();
+            makeCoordinate(Info.chainLength, Info.overallLength, TLR, Info.By);
+            CG.InitImg(Info.chainLength, Info.overallLength, coordinate);
+            return CG;
+        }
+
+        private void makeCoordinate(Double chainLength, Double overallLength, Double TLR, Double By) {
             Int32 coordinateL = random.Next((Int32)overallLength * 2, (Int32)overallLength * 3);
             if (coordinateL > 10000) coordinateL = 10000;
             coordinate = new Double[coordinateL, 2];
@@ -224,31 +265,17 @@ namespace OtdrTable {
         }
 
         static public String[,] ReadXlsx(String filePath) {
-            XlsFile xls = new XlsFile(filePath);
-            xls.ActiveSheetByName = "工程量明细表";
-            Int32 XF = -1, rowCount = 0; ;
-            Int32 c = 0;
-
-            // 獲得項目數，即有效行數
-            for (Int32 row = 1; row < xls.RowCount; row++) {
-                if (xls.GetCellValueIndexed(row, 1, ref XF) == null) c++;
-                else c = 0;
-                // 往下十行為空 視為文件結束
-                if (c.Equals(10)) {
-                    rowCount = row - 10;
-                    break;
-                }
-            }
-            rowCount = rowCount == 0 ? xls.RowCount - 5 : rowCount - 5; // 有效行數 = 總行數 - 頭三行 - 尾二行
-
+            ISheet Sheet;
+            using (FileStream fs = File.OpenRead(filePath))
+                Sheet = WorkbookFactory.Create(fs).GetSheet("工程量明细表");
+            Int32 rowCount = Sheet.LastRowNum - 5 + 1;
             String[,] str = new String[rowCount, 3];
-            String notEmpty = String.Empty;
-            for (Int32 row = 4; row < rowCount + 4; row++) {
-                str[row - 4, 0] = xls.GetCellValueIndexed(row, 3, ref XF) != null ?
-                    xls.GetCellValueIndexed(row, 3, ref XF).ToString() : notEmpty;
-                str[row - 4, 1] = xls.GetCellValueIndexed(row, 5, ref XF).ToString();
-                str[row - 4, 2] = xls.GetCellValueIndexed(row, 4, ref XF).ToString();
-                notEmpty = str[row - 4, 0];
+            String notEmpty = null;
+            for (Int32 row = 3,Index = 0; row < rowCount + 3;Index++, row++) {
+                str[Index, 0] = Sheet.GetCellValue(row, 2) ?? notEmpty;
+                str[Index, 1] = Sheet.GetCellValue(row, 4);
+                str[Index, 2] = Sheet.GetCellValue(row, 3);
+                notEmpty = str[Index, 0];
             }
             return str;
         }
