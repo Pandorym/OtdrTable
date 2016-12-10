@@ -13,7 +13,7 @@ using OtdrTable.NPOI_Ex;
 using System.Drawing;
 
 namespace OtdrTable {
-    class Xlsx {
+    class Output {
         private IWorkbook Workbook;
         private ISheet ActiveSheet;
         ICellStyle DefaultStyle;
@@ -31,6 +31,21 @@ namespace OtdrTable {
 
         private Random random = new Random();
         static private Object ConsoleLock = new Object();
+
+        static public void ShowInfo(XlsxInfo[] xlsxInfo) {
+            Int32 gytsSum = 0;
+            for (Int32 i = 0; i < xlsxInfo.Length; i++)
+                gytsSum += xlsxInfo[i].gyts;
+            Conex.DebugLine("Project sum: {0}; Gyts sum: {1}.", xlsxInfo.Length, gytsSum);
+            for (Int32 i = 0; i < xlsxInfo.Length; i++)
+                Conex.WriteLine("{0,2}. Wait   0/{1,-3} {2,10:F2} {3,10:F2} {4,6:F3} {5}",
+                    (i + 1).ToString(),
+                    xlsxInfo[i].gyts,
+                    xlsxInfo[i].chainLength,
+                    xlsxInfo[i].overallLength,
+                    xlsxInfo[i].By,
+                    xlsxInfo[i].imgName);
+        }
 
         public void ExportingXlsx(XlsxInfo info, Int32 LineNum) {
             lock (ConsoleLock) {
@@ -195,7 +210,7 @@ namespace OtdrTable {
 
         // 生成底圖。
         // De: 即對初始化CurveGraph。獲得比成圖缺少A點標記的對象。
-        private CurveGraph markGraphBase() {
+        public CurveGraph markGraphBase() {
             CurveGraph CG = new CurveGraph();
             makeCoordinate(Info.chainLength, Info.overallLength, TLR, Info.By);
             CG.InitImg(Info.chainLength, Info.overallLength, coordinate);
@@ -264,33 +279,5 @@ namespace OtdrTable {
             }
         }
 
-        static public String[,] ReadXlsx(String filePath) {
-            ISheet Sheet;
-            using (FileStream fs = File.OpenRead(filePath))
-                Sheet = WorkbookFactory.Create(fs).GetSheet("工程量明细表");
-            Int32 rowCount = Sheet.LastRowNum - 5 + 1;
-            String[,] str = new String[rowCount, 3];
-            String notEmpty = null;
-            for (Int32 row = 3,Index = 0; row < rowCount + 3;Index++, row++) {
-                str[Index, 0] = Sheet.GetCellValue(row, 2) ?? notEmpty;
-                str[Index, 1] = Sheet.GetCellValue(row, 4);
-                str[Index, 2] = Sheet.GetCellValue(row, 3);
-                notEmpty = str[Index, 0];
-            }
-            return str;
-        }
-
-        static public String[,] ReadTxt(String filePath) {
-            StreamReader sr = new StreamReader(filePath, Encoding.UTF8);
-            String[] Line = sr.ReadToEnd().Split('\n');
-            String[,] str = new String[Line.Length,3];
-            for (Int32 i = 0; i < Line.Length; i++) {
-                if (Line[i][Line[i].Length - 1] == '\r') Line[i] = Line[i].Substring(0, Line[i].Length - 1);
-                str[i, 0] = Line[i].Split(' ')[0];
-                str[i, 2] = Line[i].Split(' ')[1];
-                str[i, 1] = Line[i].Split(' ')[2];
-            }
-            return str;
-        }
     }
 }
