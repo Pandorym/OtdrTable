@@ -14,6 +14,8 @@ using System.Drawing;
 
 namespace OtdrTable {
     class Output {
+        public Option Options = Program.Options;
+
         private IWorkbook Workbook;
         private ISheet ActiveSheet;
         ICellStyle DefaultStyle;
@@ -75,7 +77,8 @@ namespace OtdrTable {
 
             TLR = 0.25 + Convert.ToDouble(random.Next(5, 95)) / 1000; // total loss ratio of overal
 
-            CurveGraph CG = this.markGraphBase();
+            CurveGraph CG = null;
+            if (Options.MarkGytsMode == MakeGytsMode.All) CG = this.markGraphBase();
 
             // GOTO: ColFmt.Font.Family = 3;
             // GOTO: ColFmt.Font.Scheme = TFontScheme.None;
@@ -105,6 +108,7 @@ namespace OtdrTable {
 
             Int32 i = 1;
             for (Int32 s = 0; s < Math.Max(1, (Info.gyts) / 6); s++) {
+                if (Options.MarkGytsMode == MakeGytsMode.Gyts6) CG = this.markGraphBase();
 
                 ActiveSheet = Workbook.CreateSheet((1 + 6 * s).ToString() + "-" + (6 + s * 6).ToString());
 
@@ -120,6 +124,7 @@ namespace OtdrTable {
 
                 Int32 gyts = (s+1) * 6 > Info.gyts ? Info.gyts % 6 : 6;
                 for (Int32 j = 0; j < gyts; j++, i++) {
+                    if (Options.MarkGytsMode == MakeGytsMode.Gyts6) CG = this.markGraphBase();
 
                     Int32 AKey;
                     Double A2B, A2BTLP;

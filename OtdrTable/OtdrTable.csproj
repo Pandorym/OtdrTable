@@ -99,6 +99,7 @@
     <Compile Include="MakeGytsMode.cs" />
     <Compile Include="NPOI-Ex\ISheet-Ex.cs" />
     <Compile Include="NPOI-Ex\IWorkbook-Ex.cs" />
+    <Compile Include="Option.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Output.cs" />

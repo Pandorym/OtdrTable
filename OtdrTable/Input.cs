@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace OtdrTable {
@@ -42,15 +43,20 @@ namespace OtdrTable {
                     projectInfo[i].By = Convert.ToDouble(random.Next(12000, 17000)) / 1000;
                 }
             }
-            catch {
+            catch (Exception e) {
+                if (Regex.IsMatch(e.Message, "^(_EXIT)|(_CONTINUE)$")) throw e;
                 Conex.ErrorLine("    Analytic failure");
-                return null;
+                throw new Exception("_CONTINUE");
             }
             Conex.InfoLine("    Analytical success.");
             return projectInfo;
         }
 
         static public String[,] readFile(String filepath) {
+            if (!File.Exists(filepath)) {
+                Conex.ErrorLine("    File does not exist.");
+                throw new Exception("_CONTINUE");
+            }
             String[,] inputInfo = null;
             String suffix = filepath.Split('.').Last().ToUpper();
             try {
@@ -70,9 +76,9 @@ namespace OtdrTable {
             }
             catch {
                 Conex.ErrorLine("    Failed to read file.");
-                return null;
+                throw new Exception("_CONTINUE");
             }
-            Conex.InfoLine("    Read successfully. {0}",suffix);
+            Conex.InfoLine("    Read successfully. -\"{0}\"", suffix);
             return inputInfo;
         }
 
