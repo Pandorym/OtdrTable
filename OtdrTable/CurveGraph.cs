@@ -78,9 +78,8 @@ namespace OtdrTable
         {
             Font font = new Font("宋体", 12, FontStyle.Bold);
             SolidBrush sbrush = new SolidBrush(Color.Black);
-            g.DrawString("迹线图", font, sbrush, new PointF(2, 2));
+            g.DrawString("OTDR Trace", font, sbrush, new PointF(2, 2));
             font = new Font("宋体", 10);
-            g.DrawString(yDiv + " m/Div 4.000dB/Div", font, sbrush, new PointF(62, 6));
         }
 
         public void addLimit(Int32 chainLength)

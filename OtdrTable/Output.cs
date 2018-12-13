@@ -158,26 +158,26 @@ namespace OtdrTable {
                     SetCellValue(4 + OffsetX, 0 + OffsetY, "A-B 距离:");
                     SetCellValue(4 + OffsetX, 1 + OffsetY, ((Int32)A2B).ToString() + " m");
 
-                    SetCellValue(4 + OffsetX, 2 + OffsetY, "A-B 衰减;");
+                    SetCellValue(4 + OffsetX, 2 + OffsetY, "A-B 衰减:");
                     SetCellValue(4 + OffsetX, 3 + OffsetY, (A2BTLP * A2B / 1000).ToString("0.000") + " dB");
 
-                    SetCellValue(5 + OffsetX, 0 + OffsetY, "A-B 衰减系数;");
+                    SetCellValue(5 + OffsetX, 0 + OffsetY, "A-B 衰减系数:");
                     SetCellValue(5 + OffsetX, 1 + OffsetY, A2BTLP.ToString("0.000") + " dB/km");
 
-                    SetCellValue(5 + OffsetX, 2 + OffsetY, "A 纵坐标;");
+                    SetCellValue(5 + OffsetX, 2 + OffsetY, "A 纵坐标:");
                     SetCellValue(5 + OffsetX, 3 + OffsetY, coordinate[AKey, 1].ToString("0.000") + " dB");
 
-                    SetCellValue(6 + OffsetX, 0 + OffsetY, "链长;");
+                    SetCellValue(6 + OffsetX, 0 + OffsetY, "链长:");
                     SetCellValue(6 + OffsetX, 1 + OffsetY, Info.chainLength.ToString() + " m");
 
-                    SetCellValue(6 + OffsetX, 2 + OffsetY, "链衰减;");
+                    SetCellValue(6 + OffsetX, 2 + OffsetY, "链衰减:");
                     SetCellValue(6 + OffsetX, 3 + OffsetY, (TLR * Info.chainLength / 1000).ToString("0.000") + " dB");
 
-                    SetCellValue(7 + OffsetX, 0 + OffsetY, "链衰减系数;");
+                    SetCellValue(7 + OffsetX, 0 + OffsetY, "链衰减系数:");
                     SetCellValue(7 + OffsetX, 1 + OffsetY, TLR.ToString("0.000") + " dB/km");
 
-                    SetCellValue(7 + OffsetX, 2 + OffsetY, "事件数量;");
-                    SetCellValue(7 + OffsetX, 3 + OffsetY, 2);
+                    SetCellValue(7 + OffsetX, 2 + OffsetY, "波长:");
+                    SetCellValue(7 + OffsetX, 3 + OffsetY, "1310   nn/SM");
 
                     // GOTO: xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
                     lock (ConsoleLock) {
