@@ -26,12 +26,12 @@ namespace OtdrTable {
                     projectInfo[i].gyts = Int32.Parse(inputInfo[i, 2].Remove(inputInfo[i, 2].Length - 1, 1).Remove(0, 5));
                     if (i > 0 && inputInfo[i - s, 0] == inputInfo[i, 0]) {
                         s++;
-                        projectInfo[i].xlsxName = inputInfo[i, 0] + s.ToString("D3") + "曲线图.xlsx";
+                        projectInfo[i].xlsxName = Input.formatFiliname(projectInfo[i].projectName) + s.ToString("D3") + "曲线图.xlsx";
                     }
                     else {
-                        projectInfo[i].xlsxName = inputInfo[i, 0] + "曲线图.xlsx";
+                        projectInfo[i].xlsxName = Input.formatFiliname(projectInfo[i].projectName) + "曲线图.xlsx";
                         if (s != 1) {
-                            projectInfo[i - s].xlsxName = inputInfo[i - s, 0] + "001曲线图.xlsx";
+                            projectInfo[i - s].xlsxName = Input.formatFiliname(projectInfo[i].projectName) + "001曲线图.xlsx";
                             s = 1;
                         }
                     }
@@ -51,6 +51,11 @@ namespace OtdrTable {
             Conex.InfoLine("    Analytical success.");
             return projectInfo;
         }
+
+        static public String formatFiliname(String projectName) {
+            return projectName.Replace('\\', '_').Replace('/', '_').Replace(':', '_').Replace('*', '_')
+                .Replace('?', '_').Replace('"', '_').Replace('<', '_').Replace('>', '_').Replace('|', '_');
+         }
 
         static public String[,] readFile(String filepath) {
             if (!File.Exists(filepath)) {

@@ -177,7 +177,7 @@ namespace OtdrTable {
                     SetCellValue(7 + OffsetX, 1 + OffsetY, TLR.ToString("0.000") + " dB/km");
 
                     SetCellValue(7 + OffsetX, 2 + OffsetY, "波长:");
-                    SetCellValue(7 + OffsetX, 3 + OffsetY, "1310   nn/SM");
+                    SetCellValue(7 + OffsetX, 3 + OffsetY, Options.WaveLength.ToString() + "   nn/SM");
 
                     // GOTO: xls.DocumentProperties.SetStandardProperty(TPropertyId.Author, "Microsoft");
                     lock (ConsoleLock) {

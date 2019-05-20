@@ -51,6 +51,7 @@ namespace OtdrTable {
             Conex.DebugLine("Once: {0}", Options.Once);
             Conex.DebugLine("args: {0}", String.Join(" ", Options.args));
             Conex.DebugLine("MarkGytsMode: {0}", Options.MarkGytsMode);
+            Conex.DebugLine("WaveLength: {0}   nn/SM", Options.WaveLength);
         }
 
         // 處理用戶在命令行中的輸入。
@@ -80,9 +81,19 @@ namespace OtdrTable {
 
         static private Option GetOptions(String[] args, String OptionFilePath) {
             Option Options = new Option() {
-                Once = args.Length != 0,
-                args = args
+                Once = false
             };
+
+            for (Int32 i = 0; i < args.Length; i++) {
+                if (args[i][0] != '-' ) { 
+                    Options.args.Add(args[i]);
+                    Options.Once = true;
+                    continue;
+                };
+
+                if (args[i].ToLower() == "-waveLength".ToLower()) Options.WaveLength = int.Parse(args[++i]);
+            }
+
             return Options;
         }
     }

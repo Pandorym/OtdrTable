@@ -16,13 +16,13 @@ OT
 or
 
 ```
-OT <inputFile PATH>
+OT <inputFile PATH> <-waveLength [number]>
 ```
 
 ### Input file format
 #### 1. TXT
 
-Example:
+Example(/km):
 
 ```
 天堂到地狱线路 GYTS-24D 12000
