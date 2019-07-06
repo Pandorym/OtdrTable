@@ -104,6 +104,12 @@ namespace OtdrTable {
             style_centen_10.ShrinkToFit = false;
             style_centen_10.SetFont(font_10);
 
+            ICellStyle style_header = Workbook.CreateCellStyle();
+            style_header.Alignment = HorizontalAlignment.Center;
+            style_header.ShrinkToFit = false;
+            style_header.SetFont(font_10);
+            style_header.WrapText = true;
+
             this.DefaultStyle = DefaultStyle;
 
             Int32 i = 1;
@@ -137,7 +143,8 @@ namespace OtdrTable {
                     A2BTLP = (coordinate[AKey, 1] - coordinate[BKey, 1]) / A2B * 1000;
                     A2BTLP = TLR - random.Next(1, 99) / 1000.00;
                     if (j % 2 == 0) {
-                        SetRowHeight(0 + OffsetX, 540);
+                        SetRowHeight(0 + OffsetX, 200);
+                        SetRowHeight(1 + OffsetX, 540);
                         SetRowHeight(2 + OffsetX, 2700);
                     }
                     
@@ -148,6 +155,7 @@ namespace OtdrTable {
 
 
                     SetCellStyle(1 + OffsetX, 0 + OffsetY, style_centen_10);
+                    SetCellStyle(1 + OffsetX, 0 + OffsetY, style_header);
                     SetCellValue(1 + OffsetX, 0 + OffsetY, Info.imgName + i.ToString("D3"));
                     
                     AddPicture(CG.GetImg(coordinate[AKey, 0]), 0, 0, -10000, 0, 0 + OffsetY, 2 + OffsetX, 4 + OffsetY, 3 + OffsetX);                    
